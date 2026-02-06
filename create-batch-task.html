@@ -571,35 +571,34 @@
 
                 showStatus('Creating subtasks...', 'info');
 
-                // Create subtasks immediately
-                const subtaskPromises = [];
+                // Create subtasks sequentially with proper ordering
                 for (let i = rangeStart; i <= rangeEnd; i++) {
                     const videoNumber = String(i).padStart(2, '0');
                     const subtaskName = `${yyyymm} ${client} ${contentType} ${videoNumber}`;
 
-                    subtaskPromises.push(
-                        fetch(`https://api.clickup.com/api/v2/list/${CONFIG.EDITING_LIST_ID}/task`, {
-                            method: 'POST',
-                            headers: {
-                                'Authorization': CONFIG.CLICKUP_API_TOKEN,
-                                'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify({
-                                name: subtaskName,
-                                parent: taskId,
-                                status: 'to do'
-                            })
-                        })
-                    );
+                    // Calculate priority (1 = highest, 4 = lowest)
+                    // Using priority 2 for all, but creating sequentially ensures correct order
+                    const priority = 2;
 
-                    // Small delay to avoid rate limiting
+                    await fetch(`https://api.clickup.com/api/v2/list/${CONFIG.EDITING_LIST_ID}/task`, {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': CONFIG.CLICKUP_API_TOKEN,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            name: subtaskName,
+                            parent: taskId,
+                            status: 'to do',
+                            priority: priority
+                        })
+                    });
+
+                    // Small delay to avoid rate limiting and ensure sequential creation
                     if (i < rangeEnd) {
                         await new Promise(resolve => setTimeout(resolve, 300));
                     }
                 }
-
-                // Wait for all subtasks to be created
-                await Promise.all(subtaskPromises);
 
                 showStatus(`âœ… Success! Created "${taskName}" with ${videoCount} subtasks instantly!`, 'success');
 
